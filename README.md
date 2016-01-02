@@ -1,3 +1,3 @@
 # Taxi Camera Project
 
-This project will contain all sources to control a camera in a taxi.
+This project will contain all sources to control a surveillance system in a car.
