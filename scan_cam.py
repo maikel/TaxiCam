@@ -28,7 +28,8 @@ def main(argv):
                  "neighbors=",
                  "soruce=",
                  "min-size=",
-                 "cascade-file="])
+                 "cascade-file=",
+                 "debug"])
     except getopt.GetoptError:
         print 'Use "', sys.argv[0],' --help", if you dont know what to do.'
         sys.exit(2)
@@ -59,6 +60,8 @@ def main(argv):
             min_size = literal_eval(arg)
         elif opt == "--cascade-file":
             cascade_filename = arg
+        elif opt == "--debug":
+            logging.basicConfig(level=logging.DEBUG)
    
     if (max_frames == -1):
         sys.exit()
@@ -78,5 +81,5 @@ if __name__ == "__main__":
     logging.basicConfig(
             format='%(asctime)s %(name)s [%(levelname)s] %(message)s',
             datefmt='%m/%d/%Y %I:%M:%S %p',
-            level=logging.DEBUG)
+            level=logging.INFO)
     main(sys.argv[1:])

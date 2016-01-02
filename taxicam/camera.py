@@ -6,6 +6,7 @@ import gnupg
 import time
 import sys
 import cv2
+import os.path # does file exist
 
 log = logging.getLogger(__name__)
 gpg = gnupg.GPG(gnupghome='/home/maikel/.gnupg')
@@ -31,9 +32,8 @@ def encrypt_picture_to_file(picture, file_name):
     """Takes a cv-picture, converts to PNG in memory and encrypt it."""
     (ret, data) = cv2.imencode('.png', picture)
     data = data.tostring()
-    print ret
     for key in pub_keys:
-        log.debug("Picture gets encrypted for " + str(key['uids']) + ".")
+        log.info("Picture gets encrypted for " + str(key['uids']) + ".")
         encrypted = gpg.encrypt(data, key['fingerprint'], armor=False)
         data = encrypted.data
     log.info("Save encrypted picture as '" + file_name + "'.")
@@ -57,15 +57,27 @@ def scan_cam(source=0,
              rect_color=(0,255,0),
              rect_width=2):
     """Scan webcam and take pictures of faces."""
+    starting_time = time.strftime("%d.%m.%y_%H:%M:%S-")
     cap = cv2.VideoCapture(source)
-    logging.debug("Using '"+cascade_filename+"' as cascade database.")
+    log.debug("Using '"+cascade_filename+"' as cascade database.")
     face_cascade = cv2.CascadeClassifier(cascade_filename)
-    logging.debug("Starting camera.")
+    log.debug("Starting camera.")
     ret, frame = cap.read()
     count = 0
     faces_saved = 0
+    faces_max_save_steps = max_frames/max_faces
     while ret:
-        logging.debug("Processing Frame #" + str(count+1) + ".")
+        log.debug("Processing Frame #" + str(count+1) + ".")
+        if count >= faces_saved*faces_max_save_steps and faces_saved < max_faces:
+            faces_saved += 1
+        # if we dont have an image yet, just save and look for better later
+        image_file_name = starting_time+"image"+str(faces_saved)+".png.gpg"
+        if not os.path.isfile(image_file_name):
+            log.info("Time for another image!" +
+                      " Saving first candidate no. #" + str(faces_saved) + ".")
+            encrypt_picture_to_file(frame, image_file_name)
+            updated = 0
+
         # detect and mark faces ...
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         # gray = cv2.equalizeHist(gray) maybe better results?
@@ -77,14 +89,19 @@ def scan_cam(source=0,
                 flags=detect_flags)
         for (x,y,w,h) in detected_faces:
             cv2.rectangle(frame, (x,y), (x+w, y+h), rect_color, rect_width)
+
         # check if we have match!
         if not(isinstance(detected_faces, tuple)) or detected_faces:
             if print_on_match:
-                logging.info("Found face(s) at:")
+                log.info("Found face(s) at:")
                 for (x,y,w,h) in detected_faces:
-                    logging.info("\t(x="+str(x)+",y="+str(y)+")")
-            # some saving logic for the picture here
-            faces_saved = faces_saved + 1
+                    log.info("\t(x="+str(x)+",y="+str(y)+")")
+            # if we found a "better" update, update the image!
+            if updated < detected_faces.size:
+                log.info("Updating candidate #" + str(faces_saved) + ".")
+                encrypt_picture_to_file(frame, image_file_name)
+                updated = detected_faces.size
+
         if show_image: 
             cv2.imshow('camera', frame)
         cv2.waitKey(framerate)
