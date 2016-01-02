@@ -7,6 +7,7 @@ import cv2
 
 log = logging.getLogger(__name__)
 gpg = gnupg.GPG(gnupghome='/home/maikel/.gnupg')
+gpg.encoding = 'utf8'
 pub_keys = gpg.list_keys()
 
 def take_picture_from_device(source):
@@ -26,14 +27,17 @@ def take_picture_from_device(source):
 
 def encrypt_picture_to_file(picture, file_name):
     """Takes a cv-picture, converts to PNG in memory and encrypt it."""
-    png = cv2.imencode('.png', picture)
-    data = numpy.array(png[1]).tostring()
+    (ret, data) = cv2.imencode('.png', picture)
+    data = data.tostring()
+    print ret
     for key in pub_keys:
         log.debug("Picture gets encrypted for " + str(key['uids']) + ".")
-        data = gpg.encrypt(data+'\0', key['fingerprint'])
-    log.info("Saving encrypted picture as '" + file_name + "'.")
+        encrypted = gpg.encrypt(data, key['fingerprint'], armor=False)
+        data = encrypted.data
+    log.info("Save encrypted picture as '" + file_name + "'.")
+#    print data
     fd = open(file_name, "wb")
-    fd.write(str(data))
+    fd.write(data)
     fd.close()
     return data
 
