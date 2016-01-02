@@ -14,6 +14,3 @@ system in a car.
 * everything seems possible with simple python scripts
 * look into the OpenCV library for face detection
 
-
-Some more information will follow!
-
