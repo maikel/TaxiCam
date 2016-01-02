@@ -15,10 +15,11 @@ setup (
 
        #summary = 'Just another Python package for the cheese shop',
        url='',
-       license='MIT',
+       license='Apache License, Version 2.0',
        long_description='Various Scripts to control the camera in a car.',
 
-       # could also include long_description, download_url, classifiers, etc.
+       # could also include long_description, download_url, classifiers,
+       # etc.
 
   
        )
