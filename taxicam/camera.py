@@ -65,7 +65,7 @@ def scan_cam(source=0,
     count = 0
     faces_saved = 0
     while ret:
-        logging.debug("Processing Frame #" + string(count+1) + ".")
+        logging.debug("Processing Frame #" + str(count+1) + ".")
         # detect and mark faces ...
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         # gray = cv2.equalizeHist(gray) maybe better results?
