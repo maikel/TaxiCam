@@ -37,10 +37,6 @@ def encrypt_picture_to_file(picture, file_name):
     fd.close()
     return data
 
-def picture_has_face(picture, cascade):
-    """Use HAAR-Cascading to decide if you see a face."""
-    return false
-
 def scan_cam(source=0,
              max_frames=100,
              max_faces=4,
@@ -70,9 +66,11 @@ def scan_cam(source=0,
                 flags=detect_flags)
         for (x,y,w,h) in detected_faces:
             cv2.rectangle(frame, (x,y), (x+w, y+h), rect_color, rect_width)
-        if print_on_match:
-            if not(isinstance(detected_faces, tuple)) or detected_faces:
+        # check if we have match!
+        if not(isinstance(detected_faces, tuple)) or detected_faces:
+            if print_on_match:
                 print 'Found a face at (x=' + str(x) + ',y=' + str(y) + ')'
+            # some saving logic for the picture here
         if show_image: 
             cv2.imshow('camera', frame)
         cv2.waitKey(framerate)
