@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 """Scan camera for a face"""
 
+import logging
 import sys, getopt
 import taxicam.camera as cam
 from ast import literal_eval # safe type converting
