@@ -3,6 +3,7 @@
 import logging
 import numpy
 import gnupg
+import time
 import cv2
 
 log = logging.getLogger(__name__)
@@ -56,12 +57,17 @@ def scan_cam(source=0,
              rect_width=2):
     """Scan webcam and take pictures of faces."""
     cap = cv2.VideoCapture(source)
+    logging.debug("Using '"+cascade_filename+"' as cascade database.")
     face_cascade = cv2.CascadeClassifier(cascade_filename)
+    logging.debug("Starting camera.")
     ret, frame = cap.read()
     count = 0
-    while ret:        
+    faces_saved = 0
+    while ret:
+        logging.debug("Processing Frame #" + string(count+1) + ".")
+        # detect and mark faces ...
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        # gray = cv2.equalizeHist(gray)
+        # gray = cv2.equalizeHist(gray) maybe better results?
         detected_faces = face_cascade.detectMultiScale(
                 gray,
                 scaleFactor=detect_scale,
@@ -73,8 +79,11 @@ def scan_cam(source=0,
         # check if we have match!
         if not(isinstance(detected_faces, tuple)) or detected_faces:
             if print_on_match:
-                print 'Found a face at (x=' + str(x) + ',y=' + str(y) + ')'
+                logging.info("Found face(s) at ", end="")
+                for (x,y,w,h) in detected_faces:
+                     print('(x=' + str(x) + ',y=' + str(y) + ')', end=" ")
             # some saving logic for the picture here
+            faces_saved = face_saved + 1
         if show_image: 
             cv2.imshow('camera', frame)
         cv2.waitKey(framerate)
