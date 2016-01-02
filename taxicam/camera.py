@@ -41,21 +41,44 @@ def picture_has_face(picture, cascade):
     """Use HAAR-Cascading to decide if you see a face."""
     return false
 
-def scan_cam(source, max_frames):
-    """Scan webcam for max_frames and take pictures of faces."""
+def scan_cam(source=0,
+             max_frames=100,
+             max_faces=4,
+             show_image=False,
+             print_on_match=False,
+             framerate=200,
+             cascade_filename="haarcascade_frontalface_default.xml",
+             detect_scale=1.3,
+             detect_neighbors=4,
+             detect_min_size=(20,20),
+             detect_flags=cv2.cv.CV_HAAR_SCALE_IMAGE,
+             rect_color=(0,255,0),
+             rect_width=2):
+    """Scan webcam and take pictures of faces."""
     cap = cv2.VideoCapture(source)
-    face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
-    while cap.isOpened():
-        ref, frame = cap.read()
+    face_cascade = cv2.CascadeClassifier(cascade_filename)
+    ret, frame = cap.read()
+    count = 0
+    while ret:        
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        detected_faces = face_cascade.detectMultiScale(gray, 1.3, 3)
+        # gray = cv2.equalizeHist(gray)
+        detected_faces = face_cascade.detectMultiScale(
+                gray,
+                scaleFactor=detect_scale,
+                minNeighbors=detect_neighbors,
+                minSize=detect_min_size,
+                flags=detect_flags)
         for (x,y,w,h) in detected_faces:
-            cv2.rectangle(frame, (x,y), (x+w, y+h), (0,255,0), 2)
-        if detected_faces.empty():
-            cv2.imshow('no face found', frame)
-        else:
-            cv2.imshow('found face(s)', frame)
-        if ref > max_frames:
+            cv2.rectangle(frame, (x,y), (x+w, y+h), rect_color, rect_width)
+        if print_on_match:
+            if not(isinstance(detected_faces, tuple)) or detected_faces:
+                print 'Found a face at (x=' + str(x) + ',y=' + str(y) + ')'
+        if show_image: 
+            cv2.imshow('camera', frame)
+        cv2.waitKey(framerate)
+        if (max_frames <= count):
             cap.release()
             break
+        count = count + 1
+        ret, frame = cap.read()
     cv2.destroyAllWindows()
