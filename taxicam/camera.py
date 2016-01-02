@@ -80,9 +80,9 @@ def scan_cam(source=0,
         # check if we have match!
         if not(isinstance(detected_faces, tuple)) or detected_faces:
             if print_on_match:
-                logging.info("Found face(s) at ",end='')
+                logging.info("Found face(s) at:")
                 for (x,y,w,h) in detected_faces:
-                    sys.stdout.write('(x='+str(x)+',y='+str(y)+')')
+                    logging.info("\t(x="+str(x)+",y="+str(y)+")")
             # some saving logic for the picture here
             faces_saved = face_saved + 1
         if show_image: 
