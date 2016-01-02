@@ -84,7 +84,7 @@ def scan_cam(source=0,
                 for (x,y,w,h) in detected_faces:
                     logging.info("\t(x="+str(x)+",y="+str(y)+")")
             # some saving logic for the picture here
-            faces_saved = face_saved + 1
+            faces_saved = faces_saved + 1
         if show_image: 
             cv2.imshow('camera', frame)
         cv2.waitKey(framerate)
