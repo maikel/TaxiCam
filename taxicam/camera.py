@@ -181,20 +181,20 @@ class Camera:
             self.encrypt_picture_to_file(current_frame, self.current_candidate_path)
             self.current_candidate_faces = detected_faces.size
 
-def take_picture_from_device(source):
-    """Takes a picture from source and returns it."""
-    log.debug("Taking picture.")
-    log.debug("Opening source device '" + str(source) + "'.")
-    cap = cv2.VideoCapture(source)
-    if cap.isOpened():
-        ret, frame = cap.read()
-        log.debug("Got picutre! Releasing device.")
-        cap.release()
-        return frame
-    else:
-        log.error(
-            "Could not open '" + str(source) + "' as video capturing device!")
-        raise Exception("Could not open the camera!")
+    def take_picture(self):
+        """Takes a picture from source and returns it."""
+        log.debug("Taking picture.")
+        log.debug("Opening source device '" + str(self.source) + "'.")
+        cap = cv2.VideoCapture(self.source)
+        if cap.isOpened():
+            ret, frame = cap.read()
+            log.debug("Got picutre! Releasing device.")
+            cap.release()
+            return frame
+        else:
+            log.error(
+                "Could not open '" + str(source) + "' as video capturing device!")
+            raise Exception("Could not open the camera!")
 
 def _create_bz2_from_files(archive, files, target_dir):
     """Take a list of file names and add them `archive`.

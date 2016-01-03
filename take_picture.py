@@ -22,8 +22,9 @@ def main(argv):
     if (outputfile == ''):
         sys.exit()
     
-    pic = cam.take_picture_from_device(0)
-    cam.encrypt_picture_to_file(pic, outputfile)
+    camera = cam.Camera(source=0)
+    pic = camera.take_picture()
+    camera.encrypt_picture_to_file(pic, outputfile)
 
 if __name__ == "__main__":
     logging.basicConfig(
