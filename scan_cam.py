@@ -3,7 +3,7 @@
 
 import logging
 import sys, getopt
-import taxicam.camera as cam
+import taxicam.camera
 from ast import literal_eval # safe type converting
 
 def main(argv):
@@ -69,7 +69,7 @@ def main(argv):
             datefmt='%m/%d/%Y %I:%M:%S %p',
             level=loglevel)
 
-    pics = cam.scan_cam(
+    camera = taxicam.camera.Camera(
                 source=source,
                 max_frames=max_frames,
                 max_faces=max_faces,
@@ -79,7 +79,8 @@ def main(argv):
                 detect_scale=scale,
                 print_on_match=verbose,
                 show_image=show_image,
-                cascade_filename=cascade_filename)
+                cascade_filename=cascade_filename)    
+    camera.scan_for_faces()
 
 if __name__ == "__main__":    
     main(sys.argv[1:])
