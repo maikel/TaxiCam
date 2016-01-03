@@ -16,6 +16,7 @@ def main(argv):
     verbose    = False # print matches to stdout
     show_image = False # call cv2.imshow (needs monitor)
     min_size   = (100,100) # minimum size of faces in pixel
+    loglevel   = logging.INFO # default log level
     cascade_filename='haarcascade_frontalface_default.xml'
 
     try:
@@ -61,11 +62,14 @@ def main(argv):
         elif opt == "--cascade-file":
             cascade_filename = arg
         elif opt == "--debug":
-            logging.basicConfig(level=logging.DEBUG)
+            loglevel=logging.DEBUG
    
-    if (max_frames == -1):
-        sys.exit()
-    pic = cam.scan_cam(
+    logging.basicConfig(
+            format='%(asctime)s %(name)s [%(levelname)s] %(message)s',
+            datefmt='%m/%d/%Y %I:%M:%S %p',
+            level=loglevel)
+
+    pics = cam.scan_cam(
                 source=source,
                 max_frames=max_frames,
                 max_faces=max_faces,
@@ -77,9 +81,5 @@ def main(argv):
                 show_image=show_image,
                 cascade_filename=cascade_filename)
 
-if __name__ == "__main__":
-    logging.basicConfig(
-            format='%(asctime)s %(name)s [%(levelname)s] %(message)s',
-            datefmt='%m/%d/%Y %I:%M:%S %p',
-            level=logging.INFO)
+if __name__ == "__main__":    
     main(sys.argv[1:])
