@@ -14,3 +14,11 @@ system in a car.
 * everything seems possible with simple python scripts
 * look into the OpenCV library for face detection
 
+## Install Locally
+
+ * install pip and virtualenv 
+ * create virtual enviroment with "virtualenv 'path-to-venv'"
+ * install numpy and opencv globally on your system (see http://ntraft.com/opencv-in-a-virtualenv/)
+ * get local packages by: 'path-to-venv'/bin/pip install -r requirements.txt 
+ * copy the cv files to your virtualenv: into 'path-to-venv'/lib/python2.7/site-packages
+ * run program with 'path-to-venv'/bin/python scan_cam.py 
