@@ -54,6 +54,8 @@ DEFAULT_DETECT_MIN_SIZE=(20,20)
 DEFAULT_RECT_COLOR = (0,255,0) # green
 # width of rectangle drawn around matched faces
 DEFAULT_RECT_WIDTH = 2
+# gnupg home path
+DEFAULT_GNUPGHOME = '~/.gnupg'
 
 
 # make it constant?
@@ -81,7 +83,7 @@ class Camera:
         for key in kwargs:
             setattr(self, key, kwargs[key])
         # TODO make this configurable
-        self.gpg = gnupg.GPG(gnupghome='/home/maikel/.gnupg')
+        self.gpg = gnupg.GPG(gnupghome=DEFAULT_GNUPGHOME)
         # this needs python-gnupg (>0.3.7)
         # for older versions use 
         # pub_keys = gpg.list_keys()   (gets ALL registered public keys)
