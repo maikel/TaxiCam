@@ -55,7 +55,7 @@ DEFAULT_RECT_COLOR = (0,255,0) # green
 # width of rectangle drawn around matched faces
 DEFAULT_RECT_WIDTH = 2
 # gnupg home path
-DEFAULT_GNUPGHOME = '~/.gnupg'
+DEFAULT_GNUPGHOME = ''
 
 
 # make it constant?
@@ -76,14 +76,15 @@ class Camera:
         self.detect_flags     = DEFAULT_DETECT_FLAGS
         self.rect_color       = DEFAULT_RECT_COLOR
         self.rect_width       = DEFAULT_RECT_WIDTH
-        self.target_dir       = DEFAULT_TARGET_DIRECTORY        
+        self.target_dir       = DEFAULT_TARGET_DIRECTORY
+        self.gnupghome        = DEFAULT_GNUPGHOME    
         for dictionary in initial_data:
             for key in dictionary:
                 setattr(self, key, dictionary[key])
         for key in kwargs:
             setattr(self, key, kwargs[key])
         # TODO make this configurable
-        self.gpg = gnupg.GPG(gnupghome=DEFAULT_GNUPGHOME)
+        self.gpg = gnupg.GPG(gnupghome=self.gnupghome)
         # this needs python-gnupg (>0.3.7)
         # for older versions use 
         # pub_keys = gpg.list_keys()   (gets ALL registered public keys)
