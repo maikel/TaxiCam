@@ -213,7 +213,7 @@ def _create_bz2_from_files(archive, files, target_dir):
     directory_name = target_dir
     if not os.path.exists(directory_name):
         os.makedirs(directory_name)
-    tarname = directory_name+"/"+
+    tarname = directory_name+"/"+ \
               time.strftime("/%m-%d-%Y_")+str(time.time())+"-"+archive
     # create archive with python module 'tarfile'
     archive_type = str.split(archive,'.')[-1]
