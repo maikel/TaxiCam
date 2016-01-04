@@ -24,7 +24,7 @@ import os.path # does file exist
 ########################################################################
 
 # target directory to save the compressed archives
-DEFAULT_TARGET_DIRECTORY = 'pictures'
+DEFAULT_TARGET_DIRECTORY = 'archives'
 # default value for source device number
 DEFAULT_SOURCE = 0
 # maximum number of frames being processed by
@@ -210,10 +210,11 @@ def _create_bz2_from_files(archive, files, target_dir):
         files   - list of files to add to archive
     """
     # prepare target directories and build target name
-    directory_name = target_dir+time.strftime("/%d.%m.%Y/%H:%M:%S")
+    directory_name = target_dir
     if not os.path.exists(directory_name):
         os.makedirs(directory_name)
-    tarname = directory_name+"/"+archive
+    tarname = directory_name+"/"+
+              time.strftime("/%m-%d-%Y_")+str(time.time())+"-"+archive
     # create archive with python module 'tarfile'
     archive_type = str.split(archive,'.')[-1]
     tarfd = tarfile.open(tarname, 'w:'+archive_type)
