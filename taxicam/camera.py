@@ -99,6 +99,7 @@ class Camera:
             os.makedirs(self.target_directory)
         # remember paths to pictures which are chosen from the candidates
         pictures = []
+        current_path = ''
         while ret and count < self.max_frames:
             log.debug("Processing Frame #" + str(count+1) + ".")
             # check here if we are looking for the next candidate
@@ -200,7 +201,7 @@ class Camera:
         if not(isinstance(detected_faces, tuple)) \
                 and current_faces < len(detected_faces):
             log.info("Updating candidate. Found " +
-                      str(detected_faces.size) + " face(s)!")
+                      str(len(detected_faces)) + " face(s)!")
             self.encrypt_picture(current_frame, current_path)
             current_faces = len(detected_faces)
         return current_faces
