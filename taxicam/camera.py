@@ -28,7 +28,7 @@ __DEFAULT_VALUES_CAMERA__ = {
     'target_directory': 'archives',
     # default value for source device number
     'source': 0,
-    # maximum number of frames being processed by
+    # maximum number of frames being processed by the camera
     'max_frames': 100,
     # maximum number of pictures, that will be saved
     'max_pictures': 4,
@@ -45,13 +45,13 @@ __DEFAULT_VALUES_CAMERA__ = {
     'detect_scale': 1.3,
     # required number of neighbors for matching faces. required for cascade
     # higher values for better but fewer matches
-    'detect_neighbors': 3,
+    'detect_neighbors': 4,
     # haar cascade database
     'cascade_filename': "haarcascade_frontalface_default.xml",
     # flags for haar cascade
     'detect_flags': cv2.cv.CV_HAAR_SCALE_IMAGE,
     # minimum size in pixel of detected faces
-    'detect_min_size': (20,20),
+    'detect_min_size': (100,100),
     # leave the image untouched if false, otherwise draw a rectangle
     # around matching faces
     'rect_draw': True,
@@ -60,7 +60,8 @@ __DEFAULT_VALUES_CAMERA__ = {
     # width of rectangle drawn around matched faces
     'rect_width': 2,
     # gnupg home path
-    'gnupghome': ''
+    'gnupghome': '',
+    'pub_keys': 'public_keys'
 }
 
 # make it constant
@@ -80,7 +81,7 @@ class Camera:
         
         self.gpg = gnupg.GPG(gnupghome=self.gnupghome)
         # this needs python-gnupg (>0.3.7)
-        self.pub_keys = self.gpg.scan_keys('public_keys')        
+        self.pub_keys = self.gpg.scan_keys(self.pub_keys)
         log.debug("Using '"+self.cascade_filename+"' as cascade database.")        
         self.face_cascade = cv2.CascadeClassifier(self.cascade_filename)
 
