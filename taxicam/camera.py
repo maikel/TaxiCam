@@ -31,7 +31,7 @@ __DEFAULT_VALUES_CAMERA__ = {
     # maximum number of frames being processed by
     'max_frames': 100,
     # maximum number of pictures, that will be saved
-    'max_faces': 4,
+    'max_pictures': 4,
     # waiting time in milliseconds before taking next picture
     'framerate': 200,
     # boolean for calling cv2.imshow('name', frame) (only on computers)
@@ -92,7 +92,8 @@ class Camera:
         count = 0
         candidate_num = 0
         current_faces = 0
-        faces_max_save_steps = self.max_frames/self.max_faces
+        save_steps = self.max_frames/self.max_pictures # it gets rounded
+
         if not os.path.exists(self.target_directory):
             os.makedirs(self.target_directory)
         # remember paths to pictures which are chosen from the candidates
@@ -102,8 +103,8 @@ class Camera:
             # check here if we are looking for the next candidate
             # if counts gets bigger than a threshhold we save our current
             # candidate and look for the candidate of the next image
-            if count >= candidate_num*faces_max_save_steps \
-                    and candidate_num < self.max_faces:
+            if count >= candidate_num*save_steps \
+                    and candidate_num < self.max_pictures:
                 if candidate_num > 0:
                     pictures.append(current_path)
                     log.info("Picture number #" + str(candidate_num) + 
@@ -143,6 +144,8 @@ class Camera:
         _create_bz2_from_files('pictures.tar.bz2', pictures, self.target_directory)
         if self.show_image:
             cv2.destroyAllWindows()
+
+        return pictures
 
     def encrypt_picture(self, picture, save_to=''):
         """Uses all given public keys to encrypt a cv picture iteratively.
