@@ -7,7 +7,7 @@ be effective, the underlying operating system must not have a swap.
 
 Example:
     $ picture = camera.take_picture_from_device(0)
-    $ camera.encrypt_picture_to_file(picture, 'picture.png.gpg')
+    $ camera encrypt_picture(picture, 'picture.png.gpg')
 """
 
 import logging
@@ -23,100 +23,79 @@ import os.path # does file exist
 # DEFAULT CAMERA VALUES
 ########################################################################
 
-# target directory to save the compressed archives
-DEFAULT_TARGET_DIRECTORY = 'archives'
-# default value for source device number
-DEFAULT_SOURCE = 0
-# maximum number of frames being processed by
-DEFAULT_MAX_FRAMES = 100
-# maximum number of pictures, that will be saved
-DEFAULT_MAX_FACES = 4
-# waiting time in milliseconds before taking next picture
-DEFAULT_FRAMERATE = 200
-# boolean for calling `cv2.imshow('name', frame)` (only on computers)
-DEFAULT_SHOW_IMAGE = False
-# boolean for printing matching coordinates of faces upon match
-DEFAULT_PRINT_MATCH_COORDS = False         
-# scaling factor for haar-cascade, has to be greater than 1
-# smaller values will slow the process down but deliver better results
-# normally between 1.05 and 1.8
-DEFAULT_DETECT_SCALE_FACTOR = 1.3
-# required number of neighbors for matching faces. required for cascade
-# higher values for better but fewer matches
-DEFAULT_DETECT_NEIGHBORS = 3
-# haar cascade database
-DEFAULT_CASCADE_FILENAME = "haarcascade_frontalface_default.xml"
-# flags for haar cascade
-DEFAULT_DETECT_FLAGS = cv2.cv.CV_HAAR_SCALE_IMAGE
-# minimum size in pixel of detected faces
-DEFAULT_DETECT_MIN_SIZE=(20,20)
-# color of rectangle drawn around matched faces
-DEFAULT_RECT_COLOR = (0,255,0) # green
-# width of rectangle drawn around matched faces
-DEFAULT_RECT_WIDTH = 2
-# gnupg home path
-DEFAULT_GNUPGHOME = ''
+__DEFAULT_VALUES_CAMERA__ = {
+    # target directory to save the compressed archives
+    'target_directory': 'archives',
+    # default value for source device number
+    'source': 0,
+    # maximum number of frames being processed by
+    'max_frames': 100,
+    # maximum number of pictures, that will be saved
+    'max_faces': 4,
+    # waiting time in milliseconds before taking next picture
+    'framerate': 200,
+    # boolean for calling cv2.imshow('name', frame) (only on computers)
+    'show_image': False,
+    # boolean for printing matching coordinates of faces upon match
+    'print_coordinates_on_match': False,
+    # scaling factor for haar-cascade
+    # Smaller values will slow down the detection but result in better
+    # matches. Has to be greater than 1 and is normally chosen between
+    # 1.1 and 1.5
+    'detect_scale': 1.3,
+    # required number of neighbors for matching faces. required for cascade
+    # higher values for better but fewer matches
+    'detect_neighbors': 3,
+    # haar cascade database
+    'cascade_filename': "haarcascade_frontalface_default.xml",
+    # flags for haar cascade
+    'detect_flags': cv2.cv.CV_HAAR_SCALE_IMAGE,
+    # minimum size in pixel of detected faces
+    'detect_min_size': (20,20),
+    # leave the image untouched if false, otherwise draw a rectangle
+    # around matching faces
+    'rect_draw': True,
+    # color of rectangle drawn around matched faces
+    'rect_color': (0,255,0), # green
+    # width of rectangle drawn around matched faces
+    'rect_width': 2,
+    # gnupg home path
+    'gnupghome': ''
+}
 
-
-# make it constant?
+# make it constant
 log = logging.getLogger(__name__)
 
 class Camera:
     def __init__(self, *initial_data, **kwargs):
-        self.source           = DEFAULT_SOURCE
-        self.max_frames       = DEFAULT_MAX_FRAMES
-        self.max_faces        = DEFAULT_MAX_FACES
-        self.show_image       = DEFAULT_SHOW_IMAGE
-        self.print_on_match   = DEFAULT_PRINT_MATCH_COORDS
-        self.framerate        = DEFAULT_FRAMERATE
-        self.cascade_filename = DEFAULT_CASCADE_FILENAME
-        self.detect_scale     = DEFAULT_DETECT_SCALE_FACTOR
-        self.detect_neighbors = DEFAULT_DETECT_NEIGHBORS
-        self.detect_min_size  = DEFAULT_DETECT_MIN_SIZE
-        self.detect_flags     = DEFAULT_DETECT_FLAGS
-        self.rect_color       = DEFAULT_RECT_COLOR
-        self.rect_width       = DEFAULT_RECT_WIDTH
-        self.target_dir       = DEFAULT_TARGET_DIRECTORY
-        self.gnupghome        = DEFAULT_GNUPGHOME    
+        # set default values from dictionary
+        for key in __DEFAULT_VALUES_CAMERA__:
+            setattr(self, key, __DEFAULT_VALUES_CAMERA__[key])  
+        # alter class values if neccessary
         for dictionary in initial_data:
             for key in dictionary:
                 setattr(self, key, dictionary[key])
         for key in kwargs:
             setattr(self, key, kwargs[key])
-        # TODO make this configurable
+        
         self.gpg = gnupg.GPG(gnupghome=self.gnupghome)
         # this needs python-gnupg (>0.3.7)
-        # for older versions use 
-        # pub_keys = gpg.list_keys()   (gets ALL registered public keys)
-        self.pub_keys = self.gpg.scan_keys('public_keys')
+        self.pub_keys = self.gpg.scan_keys('public_keys')        
         log.debug("Using '"+self.cascade_filename+"' as cascade database.")        
         self.face_cascade = cv2.CascadeClassifier(self.cascade_filename)
 
-    def encrypt_picture_to_file(self, picture, file_name):
-        """Uses all known gpg public keys to encrypt and store a picture"""
-        (ret, data) = cv2.imencode('.png', picture)
-        data = [data.tostring()]
-        for key in self.pub_keys:
-            log.info("Picture gets encrypted for " + str(key['uids']) + ".")
-            encrypted = self.gpg.encrypt(data[-1], key['fingerprint'], armor=True)
-            data.append(encrypted.data)
-        log.info("Save encrypted picture as '" + file_name + "'.")
-        fd = open(file_name, "wb")
-        fd.write(data[-1])
-        fd.close()
-        return data[-1]
-
-    def scan_for_faces(self):
+    def scan_faces(self):
         """Use webcam and take pictures of faces, if you see them."""        
         log.debug("Starting camera.")
         cap = cv2.VideoCapture(self.source)
         ret, frame = cap.read()
         count = 0
         candidate_num = 0
+        current_faces = 0
         faces_max_save_steps = self.max_frames/self.max_faces
-        if not os.path.exists(self.target_dir):
-            os.makedirs(self.target_dir)
-
+        if not os.path.exists(self.target_directory):
+            os.makedirs(self.target_directory)
+        # remember paths to pictures which are chosen from the candidates
         pictures = []
         while ret:
             log.debug("Processing Frame #" + str(count+1) + ".")
@@ -126,43 +105,78 @@ class Camera:
             if count >= candidate_num*faces_max_save_steps \
                     and candidate_num < self.max_faces:
                 if candidate_num > 0:
-                    pictures.append(self.current_candidate_path)
-                    log.info("Picture number #"+str(candidate_num)+
+                    pictures.append(current_path)
+                    log.info("Picture number #" + str(candidate_num) + 
                              " found and saved!")
                 candidate_num += 1
-                self.current_candidate_faces = 0
-            # construct candidate path                    
-            self.current_candidate_path = \
-                    self.target_dir+"/picture_"+str(candidate_num)+".png.gpg"
-            # if we dont have any candidate yet save next picture
-            if not os.path.isfile(self.current_candidate_path):
-                log.info("First candidate for picture number "+str(candidate_num)+
-                         ". Simply saving next frame.")        
-                self.encrypt_picture_to_file(frame, self.current_candidate_path)
-            # otherwise check if frame got more faces then previous candidate
-            else:            
-                self._save_frame_if_next_candidate(frame)
-            # next frame step
+                current_path = self.target_directory \
+                    + "/picture_" + str(candidate_num) + ".png.gpg"
+                if os.path.isfile(current_path):
+                    os.remove(current_path)
+                log.info("First candidate for picture number " + \
+                         str(candidate_num) + ". Simply saving next frame.")        
+                encrypted = self.encrypt_picture(frame, current_path)
+                log.info('Save encrypted picture as "'+current_path+'".')
+                current_faces = 0
+            # Check here for the next candidate. See that function for details
+            else:
+                current_faces = self._save_frame_if_next_candidate(
+                    frame, current_path, current_faces)
+
+            # show image if requested (needs visual, e.g. computer monitor)
             if self.show_image:
                 cv2.imshow('camera', frame)
+            # waiting time in milliseconds
             cv2.waitKey(self.framerate)
             if (self.max_frames <= count):
                 cap.release()
                 break
             count = count + 1
             ret, frame = cap.read()
-        # remember last picture to be compressed
-        pictures.append(self.current_candidate_path)
-        log.info("Picture number #"+str(candidate_num)+
-                 " found and saved!")
+
+        # remember to compress last taken picture
+        pictures.append(current_path)
+        log.info("Picture number #"+str(candidate_num)+" found and saved!")
         cap.release()
+
         # compress the images in one tar ball and remove the uncompressed ones
-        _create_bz2_from_files('pictures.tar.bz2', pictures, self.target_dir)
+        _create_bz2_from_files('pictures.tar.bz2', pictures, self.target_directory)
         if self.show_image:
             cv2.destroyAllWindows()
 
-    def _save_frame_if_next_candidate(self, current_frame):
-        # Use haar-detection for finding faces
+    def encrypt_picture(self, picture, save_to=''):
+        """Uses all given public keys to encrypt a cv picture iteratively.
+
+        Params:
+            self
+            picture  picture in opencv style
+            save_to  if given save the encrypted picture there
+        """
+        (ret, data) = cv2.imencode('.png', picture)
+        data = data.tostring()
+        for key in self.pub_keys:
+            log.info("Picture gets encrypted for " + str(key['uids']) + ".")
+            encrypted = self.gpg.encrypt(data, key['fingerprint'])
+            data = encrypted.data
+        if save_to:
+            encrypted_fd = open(save_to, "wb")
+            encrypted_fd.write(data)
+            encrypted_fd.close()
+        return data
+
+    def _save_frame_if_next_candidate(self, 
+                current_frame, current_path, current_faces):
+        """This method is called in scan_faces to detect and encrypt matches.
+
+        It uses the Haar detection method from the OpenCV library to match
+        faces in a given frame. If `self.rect_draw` a rectangle for each match
+        is drawn into frame. The following class attributes impact this method
+
+        * `detect_scale`:      scaling factor for cascade 
+        * `detect_neighbors`:  neighbors required to be a match
+        * `detect_min_size`:   minimum size for matching faces
+        * `detect_flags`:      special flags for detectMultiScale()
+        * ..."""
         gray = cv2.cvtColor(current_frame, cv2.COLOR_BGR2GRAY)
         gray = cv2.equalizeHist(gray)
         detected_faces = self.face_cascade.detectMultiScale(
@@ -171,18 +185,21 @@ class Camera:
                 minNeighbors=self.detect_neighbors,
                 minSize=self.detect_min_size,
                 flags=self.detect_flags)
-        for (x,y,w,h) in detected_faces:
-            cv2.rectangle(current_frame, (x,y), (x+w, y+h),
-                          self.rect_color, self.rect_width)
-        # check for found faces and store frame as new candidate if it has more
-        # faces than before!
-        # if no faces are found detected_faces is a tuple. otherwise a numpy array!
+        if self.rect_draw:
+            for (x,y,w,h) in detected_faces:
+                cv2.rectangle(current_frame, (x,y), (x+w, y+h),
+                              self.rect_color, self.rect_width)
+        # Check for number of faces found and store the frame as a new
+        # candidate picture if it has more faces than before!
+        # Remark: If no faces are found at all `detected_faces` is a tuple.
+        #         But otherwise a numpy array!
         if not(isinstance(detected_faces, tuple)) \
-                and self.current_candidate_faces < detected_faces.size:
+                and current_faces < len(detected_faces):
             log.info("Updating candidate. Found " +
                       str(detected_faces.size) + " face(s)!")
-            self.encrypt_picture_to_file(current_frame, self.current_candidate_path)
-            self.current_candidate_faces = detected_faces.size
+            self.encrypt_picture(current_frame, current_path)
+            current_faces = len(detected_faces)
+        return current_faces
 
     def take_picture(self):
         """Takes a picture from source and returns it."""
@@ -195,11 +212,11 @@ class Camera:
             cap.release()
             return frame
         else:
-            log.error(
-                "Could not open '" + str(source) + "' as video capturing device!")
+            log.error("Could not open '" + str(self.source) + 
+                      "' as video capturing device!")
             raise Exception("Could not open the camera!")
 
-def _create_bz2_from_files(archive, files, target_dir):
+def _create_bz2_from_files(archive, files, target_directory):
     """Take a list of file names and add them `archive`.
 
     Example:
@@ -210,7 +227,7 @@ def _create_bz2_from_files(archive, files, target_dir):
         files   - list of files to add to archive
     """
     # prepare target directories and build target name
-    directory_name = target_dir
+    directory_name = target_directory
     if not os.path.exists(directory_name):
         os.makedirs(directory_name)
     tarname = directory_name+"/"+ \

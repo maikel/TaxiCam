@@ -16,7 +16,7 @@ def main(argv):
     verbose    = False # print matches to stdout
     show_image = False # call cv2.imshow (needs monitor)
     min_size   = (100,100) # minimum size of faces in pixel
-    loglevel   = logging.INFO # default log level
+    loglevel   = None # default log level
     cascade_filename='haarcascade_frontalface_default.xml'
 
     try:
@@ -31,9 +31,11 @@ def main(argv):
                  "min-size=",
                  "cascade-file=",
                  "debug"])
+
     except getopt.GetoptError:
         print 'Use "', sys.argv[0],' --help", if you dont know what to do.'
         sys.exit(2)
+
     for opt, arg in opts:
         if opt in ('-h', '--help'):
             # TODO write help...
@@ -80,7 +82,7 @@ def main(argv):
                 print_on_match=verbose,
                 show_image=show_image,
                 cascade_filename=cascade_filename)    
-    camera.scan_for_faces()
+    camera.scan_faces()
 
 if __name__ == "__main__":    
     main(sys.argv[1:])
