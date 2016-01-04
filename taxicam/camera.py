@@ -98,7 +98,7 @@ class Camera:
             os.makedirs(self.target_directory)
         # remember paths to pictures which are chosen from the candidates
         pictures = []
-        while ret:
+        while ret and count < self.max_frames:
             log.debug("Processing Frame #" + str(count+1) + ".")
             # check here if we are looking for the next candidate
             # if counts gets bigger than a threshhold we save our current
