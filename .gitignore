@@ -1,1 +1,4 @@
 *.pyc
+archive*
+picture*
+public_keys

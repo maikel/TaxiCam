@@ -2,84 +2,48 @@
 """Scan camera for a face"""
 
 import logging
-import sys, getopt
-import taxicam.camera as cam
+import sys
+import argparse
+import taxicam.camera
 from ast import literal_eval # safe type converting
 
-def main(argv):
-    max_frames = 100   # how many frames are processed max
-    max_faces  = 4     # how many faces shall be matched max
-    framerate  = 100   # pause between images in milliseconds
-    source     = 0     # device number or video file
-    scale      = 1.2   # scaling factor in haar cascading (>1)
-    neighbors  = 3     # min neighbor points in cascading
-    verbose    = False # print matches to stdout
-    show_image = False # call cv2.imshow (needs monitor)
-    min_size   = (100,100) # minimum size of faces in pixel
-    loglevel   = logging.INFO # default log level
-    cascade_filename='haarcascade_frontalface_default.xml'
+loglevels = {
+    "info": logging.INFO,
+    "debug": logging.DEBUG
+}
 
-    try:
-        opts, args = getopt.getopt(argv,"h:ivp",
-                ["max-frames=",
-                 "max-faces="
-                 "help",
-                 "framerate=",
-                 "scale=",
-                 "neighbors=",
-                 "soruce=",
-                 "min-size=",
-                 "cascade-file=",
-                 "debug"])
-    except getopt.GetoptError:
-        print 'Use "', sys.argv[0],' --help", if you dont know what to do.'
-        sys.exit(2)
-    for opt, arg in opts:
-        if opt in ('-h', '--help'):
-            # TODO write help...
-            print 'Oups...'
-            sys.exit()
-        elif opt in ("-i", "--cascade_file"):
-            haar_cascade_filename=arg
-        elif opt == "-v":
-            verbose=True
-        elif opt == "-p":
-            show_image=True
-        elif opt == "--max-frames":
-            max_frames = literal_eval(arg)
-        elif opt == "--max-faces":
-            max_faces = literal_eval(arg)
-        elif opt == '--framerate':
-            framerate = literal_eval(arg)
-        elif opt == "--scale":
-            scale = literal_eval(arg)
-        elif opt == "--neighbors":
-            neighbors = literal_eval(arg)
-        elif opt == "--source":
-            source = literal_eval(arg)
-        elif opt == "--min-size":
-            min_size = literal_eval(arg)
-        elif opt == "--cascade-file":
-            cascade_filename = arg
-        elif opt == "--debug":
-            loglevel=logging.DEBUG
-   
+def main(argv):
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--loglevel", help="set log level to info or debug")
+    parser.add_argument("--source", type=int)
+    parser.add_argument("--max_frames", type=int)
+    parser.add_argument("--max_pictures", type=int)
+    parser.add_argument("--framerate", type=int)
+    parser.add_argument("--detect_neighbors", type=int)
+    parser.add_argument("--detect_scale", type=float)
+    parser.add_argument("--detect_min_size", type=tuple)
+    parser.add_argument("--cascade_filename")
+    parser.add_argument("--print_coordinates_on_match", action="store_true")
+    parser.add_argument("--show_image", action="store_true")
+    parser.add_argument("--rect_draw", action="store_true")
+    parser.add_argument("--rect_color", type=tuple)
+    parser.add_argument("--rect_width", type=int)
+    parser.add_argument("--gnupghome")
+    parser.add_argument("--pub_keys")
+
+    args = vars(parser.parse_args())
+
+    if args['loglevel']:
+        args['loglevel'] = loglevels[args['loglevel']]
     logging.basicConfig(
             format='%(asctime)s %(name)s [%(levelname)s] %(message)s',
             datefmt='%m/%d/%Y %I:%M:%S %p',
-            level=loglevel)
+            level=args['loglevel'])
 
-    pics = cam.scan_cam(
-                source=source,
-                max_frames=max_frames,
-                max_faces=max_faces,
-                framerate=framerate,
-                detect_min_size=min_size,
-                detect_neighbors=neighbors,
-                detect_scale=scale,
-                print_on_match=verbose,
-                show_image=show_image,
-                cascade_filename=cascade_filename)
+    args = { k : args[k] for k in args if args[k] != None }
+
+    camera = taxicam.camera.Camera(args)    
+    camera.scan_faces()
 
 if __name__ == "__main__":    
     main(sys.argv[1:])
