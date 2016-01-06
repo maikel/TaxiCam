@@ -23,4 +23,4 @@ for mf in max_framess:
     for mp in max_picturess:
         test_name = 'test_max_pictures_%d_max_frames_%d' % (mp, mf)
         test = test_generator(mf, mp)
-        setattr(TestCamera, test_name, test)
+        setattr(TestCameraMaxPicutresMaxFrames, test_name, test)
