@@ -1,10 +1,7 @@
-# -*- coding: utf-8 -*-
 """Control a surveillance/video camera in a car.
-
 This module grabs single frames from a running video device to process
 them and stores only gpg-encrypted data on the file system. For this to
 be effective, the underlying operating system must not have a swap.
-
 Example:
     $ picture = camera.take_picture_from_device(0)
     $ camera encrypt_picture(picture, 'picture.png.gpg')
@@ -28,10 +25,10 @@ __DEFAULT_VALUES_CAMERA__ = {
     'target_directory': 'archives',
     # default value for source device number
     'source': 0,
-    # maximum number of frames being processed by
+    # maximum number of frames being processed by the camera
     'max_frames': 100,
     # maximum number of pictures, that will be saved
-    'max_faces': 4,
+    'max_pictures': 4,
     # waiting time in milliseconds before taking next picture
     'framerate': 200,
     # boolean for calling cv2.imshow('name', frame) (only on computers)
@@ -45,13 +42,13 @@ __DEFAULT_VALUES_CAMERA__ = {
     'detect_scale': 1.3,
     # required number of neighbors for matching faces. required for cascade
     # higher values for better but fewer matches
-    'detect_neighbors': 3,
+    'detect_neighbors': 4,
     # haar cascade database
     'cascade_filename': "haarcascade_frontalface_default.xml",
     # flags for haar cascade
     'detect_flags': cv2.cv.CV_HAAR_SCALE_IMAGE,
     # minimum size in pixel of detected faces
-    'detect_min_size': (20,20),
+    'detect_min_size': (100,100),
     # leave the image untouched if false, otherwise draw a rectangle
     # around matching faces
     'rect_draw': True,
@@ -60,7 +57,8 @@ __DEFAULT_VALUES_CAMERA__ = {
     # width of rectangle drawn around matched faces
     'rect_width': 2,
     # gnupg home path
-    'gnupghome': ''
+    'gnupghome': '',
+    'pub_keys': 'public_keys'
 }
 
 # make it constant
@@ -80,7 +78,7 @@ class Camera:
         
         self.gpg = gnupg.GPG(gnupghome=self.gnupghome)
         # this needs python-gnupg (>0.3.7)
-        self.pub_keys = self.gpg.scan_keys('public_keys')        
+        self.pub_keys = self.gpg.scan_keys(self.pub_keys)
         log.debug("Using '"+self.cascade_filename+"' as cascade database.")        
         self.face_cascade = cv2.CascadeClassifier(self.cascade_filename)
 
@@ -92,18 +90,19 @@ class Camera:
         count = 0
         candidate_num = 0
         current_faces = 0
-        faces_max_save_steps = self.max_frames/self.max_faces
+        save_steps = self.max_frames/self.max_pictures # it gets rounded
+
         if not os.path.exists(self.target_directory):
             os.makedirs(self.target_directory)
         # remember paths to pictures which are chosen from the candidates
         pictures = []
-        while ret:
+        while ret and count < self.max_frames:
             log.debug("Processing Frame #" + str(count+1) + ".")
             # check here if we are looking for the next candidate
             # if counts gets bigger than a threshhold we save our current
             # candidate and look for the candidate of the next image
-            if count >= candidate_num*faces_max_save_steps \
-                    and candidate_num < self.max_faces:
+            if count >= candidate_num*save_steps \
+                    and candidate_num < self.max_pictures:
                 if candidate_num > 0:
                     pictures.append(current_path)
                     log.info("Picture number #" + str(candidate_num) + 
@@ -144,9 +143,10 @@ class Camera:
         if self.show_image:
             cv2.destroyAllWindows()
 
+        return pictures
+
     def encrypt_picture(self, picture, save_to=''):
         """Uses all given public keys to encrypt a cv picture iteratively.
-
         Params:
             self
             picture  picture in opencv style
@@ -167,11 +167,9 @@ class Camera:
     def _save_frame_if_next_candidate(self, 
                 current_frame, current_path, current_faces):
         """This method is called in scan_faces to detect and encrypt matches.
-
         It uses the Haar detection method from the OpenCV library to match
         faces in a given frame. If `self.rect_draw` a rectangle for each match
         is drawn into frame. The following class attributes impact this method
-
         * `detect_scale`:      scaling factor for cascade 
         * `detect_neighbors`:  neighbors required to be a match
         * `detect_min_size`:   minimum size for matching faces
@@ -204,11 +202,11 @@ class Camera:
     def take_picture(self):
         """Takes a picture from source and returns it."""
         log.debug("Taking picture.")
-        log.debug("Opening  device '" + str(self.source) + "'.")
+        log.debug("Opening source device '" + str(self.source) + "'.")
         cap = cv2.VideoCapture(self.source)
         if cap.isOpened():
             ret, frame = cap.read()
-            log.debug("Got picture! Releasing device.")
+            log.debug("Got picutre! Releasing device.")
             cap.release()
             return frame
         else:
@@ -222,7 +220,6 @@ class Camera:
 
 def _create_bz2_from_files(archive, files, target_directory):
     """Take a list of file names and add them `archive`.
-
     Example:
         _create_bz2_from_files('pictures.tar.bz2',
                                ['pic1.png.gpg', 'pic2.png.gpg'])
