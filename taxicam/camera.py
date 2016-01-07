@@ -28,10 +28,10 @@ __DEFAULT_VALUES_CAMERA__ = {
     'target_directory': 'archives',
     # default value for source device number
     'source': 0,
-    # maximum number of frames being processed by the camera
+    # maximum number of frames being processed by
     'max_frames': 100,
     # maximum number of pictures, that will be saved
-    'max_pictures': 4,
+    'max_faces': 4,
     # waiting time in milliseconds before taking next picture
     'framerate': 200,
     # boolean for calling cv2.imshow('name', frame) (only on computers)
@@ -45,13 +45,13 @@ __DEFAULT_VALUES_CAMERA__ = {
     'detect_scale': 1.3,
     # required number of neighbors for matching faces. required for cascade
     # higher values for better but fewer matches
-    'detect_neighbors': 4,
+    'detect_neighbors': 3,
     # haar cascade database
     'cascade_filename': "haarcascade_frontalface_default.xml",
     # flags for haar cascade
     'detect_flags': cv2.cv.CV_HAAR_SCALE_IMAGE,
     # minimum size in pixel of detected faces
-    'detect_min_size': (100,100),
+    'detect_min_size': (20,20),
     # leave the image untouched if false, otherwise draw a rectangle
     # around matching faces
     'rect_draw': True,
@@ -60,8 +60,7 @@ __DEFAULT_VALUES_CAMERA__ = {
     # width of rectangle drawn around matched faces
     'rect_width': 2,
     # gnupg home path
-    'gnupghome': '',
-    'pub_keys': 'public_keys'
+    'gnupghome': ''
 }
 
 # make it constant
@@ -81,7 +80,7 @@ class Camera:
         
         self.gpg = gnupg.GPG(gnupghome=self.gnupghome)
         # this needs python-gnupg (>0.3.7)
-        self.pub_keys = self.gpg.scan_keys(self.pub_keys)
+        self.pub_keys = self.gpg.scan_keys('public_keys')        
         log.debug("Using '"+self.cascade_filename+"' as cascade database.")        
         self.face_cascade = cv2.CascadeClassifier(self.cascade_filename)
 
@@ -93,19 +92,18 @@ class Camera:
         count = 0
         candidate_num = 0
         current_faces = 0
-        save_steps = self.max_frames/self.max_pictures # it gets rounded
-
+        faces_max_save_steps = self.max_frames/self.max_faces
         if not os.path.exists(self.target_directory):
             os.makedirs(self.target_directory)
         # remember paths to pictures which are chosen from the candidates
         pictures = []
-        while ret and count < self.max_frames:
+        while ret:
             log.debug("Processing Frame #" + str(count+1) + ".")
             # check here if we are looking for the next candidate
             # if counts gets bigger than a threshhold we save our current
             # candidate and look for the candidate of the next image
-            if count >= candidate_num*save_steps \
-                    and candidate_num < self.max_pictures:
+            if count >= candidate_num*faces_max_save_steps \
+                    and candidate_num < self.max_faces:
                 if candidate_num > 0:
                     pictures.append(current_path)
                     log.info("Picture number #" + str(candidate_num) + 
@@ -145,8 +143,6 @@ class Camera:
         _create_bz2_from_files('pictures.tar.bz2', pictures, self.target_directory)
         if self.show_image:
             cv2.destroyAllWindows()
-
-        return pictures
 
     def encrypt_picture(self, picture, save_to=''):
         """Uses all given public keys to encrypt a cv picture iteratively.
@@ -208,17 +204,21 @@ class Camera:
     def take_picture(self):
         """Takes a picture from source and returns it."""
         log.debug("Taking picture.")
-        log.debug("Opening source device '" + str(self.source) + "'.")
+        log.debug("Opening  device '" + str(self.source) + "'.")
         cap = cv2.VideoCapture(self.source)
         if cap.isOpened():
             ret, frame = cap.read()
-            log.debug("Got picutre! Releasing device.")
+            log.debug("Got picture! Releasing device.")
             cap.release()
             return frame
         else:
             log.error("Could not open '" + str(self.source) + 
                       "' as video capturing device!")
             raise Exception("Could not open the camera!")
+
+    def get_camera(self):
+        log.debug("Opening  device '" + str(self.source) + "'.")
+        return cv2.VideoCapture(self.source)
 
 def _create_bz2_from_files(archive, files, target_directory):
     """Take a list of file names and add them `archive`.

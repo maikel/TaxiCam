@@ -1,4 +1,4 @@
-import unittest
+'''import unittest
 import logging
 import cv2
 import sys
@@ -19,8 +19,13 @@ def test_generator(a, b):
         self.assertEqual(len(pictures), min(mf,mp))
     return test
 
+def test_picture
+    def test(self)
+        self.camera.take_picture()
+
 for mf in max_framess:
     for mp in max_picturess:
         test_name = 'test_max_pictures_%d_max_frames_%d' % (mp, mf)
         test = test_generator(mf, mp)
-        setattr(TestCameraMaxPicutresMaxFrames, test_name, test)
+        setattr(TestCamera, test_name, test)
+'''
