@@ -82,6 +82,22 @@ class Camera:
         log.debug("Using '"+self.cascade_filename+"' as cascade database.")        
         self.face_cascade = cv2.CascadeClassifier(self.cascade_filename)
 
+    def detect_faces(self, current_frame):
+        """ Scan picture for faces """
+        gray = cv2.cvtColor(current_frame, cv2.COLOR_BGR2GRAY)
+        gray = cv2.equalizeHist(gray)
+        detected_faces = self.face_cascade.detectMultiScale(
+                gray,
+                scaleFactor=self.detect_scale,
+                minNeighbors=self.detect_neighbors,
+                minSize=self.detect_min_size,
+                flags=self.detect_flags)
+        if self.rect_draw:
+            for (x,y,w,h) in detected_faces:
+                cv2.rectangle(current_frame, (x,y), (x+w, y+h),
+                              self.rect_color, self.rect_width)
+        return len(detected_faces) 
+
     def scan_faces(self):
         """Use webcam and take pictures of faces, if you see them."""        
         log.debug("Starting camera.")
@@ -217,6 +233,19 @@ class Camera:
     def get_camera(self):
         log.debug("Opening  device '" + str(self.source) + "'.")
         return cv2.VideoCapture(self.source)
+
+def archive_files(archive, files, target_directory, target_name):
+    directory_name = target_directory
+    if not os.path.exists(directory_name):
+        os.makedirs(directory_name)
+    tarname = target_name+"-"+archive
+    # create archive with python module 'tarfile'
+    archive_type = str.split(archive,'.')[-1]
+    tarfd = tarfile.open(tarname, 'w:'+archive_type)
+    for f in files:
+        tarfd.add(f)
+        os.remove(f)
+    tarfd.close()
 
 def _create_bz2_from_files(archive, files, target_directory):
     """Take a list of file names and add them `archive`.
